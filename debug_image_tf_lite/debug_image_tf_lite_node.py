@@ -53,13 +53,13 @@ class DebugImageTFLite(Node):
             type=ParameterType.PARAMETER_INTEGER,
             description='Max image message queue size.')
 
-        self.declare_parameter("debug_topic", "/DebugImage", 
+        self.declare_parameter("debug_topic", "/DebugImageReal", 
             debug_image_topic_descriptor)
 
-        self.declare_parameter("tflite_topic", "/TFLite", 
+        self.declare_parameter("tflite_topic", "/TFLiteReal", 
             tf_lite_topic_descriptor)
 
-        self.declare_parameter("image_topic", "/NPU/image_raw", 
+        self.declare_parameter("image_topic", "/NPU/image_real", 
             image_topic_descriptor)
 
         self.declare_parameter("threshold", 0.3, 
@@ -87,6 +87,8 @@ class DebugImageTFLite(Node):
 
         self.bridge = CvBridge()
 
+        self.Lock = False
+
     def ImageCallback(self, msgImage):
         stampSec = int(msgImage.header.stamp.sec)+int(msgImage.header.stamp.nanosec)/1000000000
         if len(self.ImageFIFO) > self.MaxQueueSize:
@@ -98,18 +100,21 @@ class DebugImageTFLite(Node):
     def TFLiteCallback(self, msgTFLite):
         if len(self.ImageFIFO) == 0:
             return
-
+        print(len(self.ImageFIFO))
         TFLiteStampSec = int(msgTFLite.camera_info.stamp.sec)+int(msgTFLite.camera_info.stamp.nanosec)/1000000000
         for i in range(len(self.ImageFIFO)):
             ImageData = self.ImageFIFO.pop()
             ImageStampSec = int(ImageData.header.stamp.sec)+int(ImageData.header.stamp.nanosec)/1000000000
-            if TFLiteStampSec == ImageStampSec:
+            if TFLiteStampSec == ImageStampSec and not self.Lock:
                 self.ImageDebug(ImageData, msgTFLite)
                 break
+            if TFLiteStampSec < ImageStampSec:
+                self.ImageFIFO.appendleft(ImageData)
         return
         
                 
     def ImageDebug(self, msgImage, msgTFlite):
+        self.Lock = True
         CVImage = self.bridge.imgmsg_to_cv2(msgImage, "bgr8")
         imageWidth = CVImage.shape[1]
         imageHeight = CVImage.shape[0]
@@ -158,6 +163,7 @@ class DebugImageTFLite(Node):
         msgDebugImage.header.frame_id = msgImage.header.frame_id + " DEBUG"
         
         self.ImagePub.publish(msgDebugImage)
+        self.Lock = False
         
         return 
             
