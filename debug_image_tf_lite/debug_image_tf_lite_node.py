@@ -100,7 +100,7 @@ class DebugImageTFLite(Node):
     def TFLiteCallback(self, msgTFLite):
         if len(self.ImageFIFO) == 0:
             return
-        print(len(self.ImageFIFO))
+
         TFLiteStampSec = int(msgTFLite.camera_info.stamp.sec)+int(msgTFLite.camera_info.stamp.nanosec)/1000000000
         for i in range(len(self.ImageFIFO)):
             ImageData = self.ImageFIFO.pop()
