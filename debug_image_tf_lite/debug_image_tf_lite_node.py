@@ -81,7 +81,7 @@ class DebugImageTFLite(Node):
         self.ImageSub = self.create_subscription(Image, '{:s}'.format(self.imageTopic), self.ImageCallback, qos_profile_sensor_data)
         self.TFLiteSub = self.create_subscription(TFLite, '{:s}'.format(self.TFLiteTopic), self.TFLiteCallback, 1)
  
-        self.ImagePub = self.create_publisher(Image,'{:s}'.format(self.debugImageTopic), 0)
+        self.ImagePub = self.create_publisher(Image,'{:s}'.format(self.debugImageTopic), qos_profile_sensor_data)
         
         self.ImageFIFO = deque()
 
